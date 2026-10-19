@@ -1,305 +1,154 @@
-HealthVision – Diabetes Prediction System
-End-to-End Data Science in Production Project
+#  HealthVision – End-to-End Production Diabetes Prediction Platform
 
-An end-to-end machine learning system for diabetes risk prediction, focusing on production engineering, including APIs, databases, orchestration, automation, and reproducibility.
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit&logoColor=white)
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=flat&logo=apacheairflow&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)
+![Grafana](https://img.shields.io/badge/Grafana-F46800?style=flat&logo=grafana&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
 
-This project was developed as part of the Data Science in Production course.
+An end-to-end, production-grade machine learning system for predicting diabetes risk based on patient health indicators (Pima Indians Diabetes Dataset). Built with automated Airflow ingestion pipelines, schema validation, real-time REST inference, interactive UI, SQL prediction logging, and live Grafana monitoring.
 
-Project Overview
+Developed as part of the **Data Science in Production** curriculum at EPITA.
 
-The system predicts diabetes risk (0/1) from patient health indicators and demonstrates how a real-world ML system operates in production.
+---
 
-Key Features
+##  Project Team
 
-FastAPI backend for predictions & data persistence
+* **Basit Ur Rehman**
+* **Juan Sebastian Pereira Lopez**
+* **Iqra Javed**
+* **Kaviyarasan Arul Jothi**
 
-Streamlit frontend for user interaction
 
-PostgreSQL database for storing predictions and statistics
+---
 
-Apache Airflow for data ingestion & scheduled predictions
+##  Pipeline & System Architecture
 
-Docker Compose for infrastructure services
+```mermaid
+graph TD
+    A[Raw Health CSVs] -->|Airflow Ingestion DAG| B{Schema Validation}
+    B -->|Valid Data| C[data/good_data]
+    B -->|Invalid Data| D[data/bad_data]
+    
+    C -->|Airflow Prediction DAG| E[FastAPI REST Engine]
+    F[Streamlit Web UI] -->|Manual User Input| E
+    
+    E -->|Predictions & Metrics| G[(PostgreSQL DB)]
+    G --> H[Grafana Dashboards]
+    
+    subgraph Monitoring & Observability
+        H --> H1[Prediction Volume & Rate]
+        H --> H2[Data Quality Trends]
+        H --> H3[Model Performance & Confusion Matrix]
+    end
 
-Production-grade startup script (manage.sh) to run everything cleanly
+```
 
-Grafana dashboards for monitoring, data quality, and model performance
+##  Key Features & Engineering Highlights
 
-Tech Stack
-Component	Technology
-UI	Streamlit
-API	FastAPI + Uvicorn
-ML	scikit-learn
-Database	PostgreSQL
-Orchestration	Apache Airflow
-Monitoring	Grafana
-Infrastructure	Docker + Docker Compose
-Language	Python 3.12
-Project Structure
+* **Automated Data Quality & Ingestion (Apache Airflow):**
+  * **`data_ingestion_pipeline` DAG:** Processes incoming CSVs from `data/raw_data/`, validates schema and value constraints, and routes files to `good_data/` or `bad_data/` while storing file-level quality statistics in PostgreSQL.
+  * **`process_success_files_dag` DAG:** Detects newly validated files, triggers scheduled batch predictions via the API, and persists results to PostgreSQL.
+* **REST API & Web Application:**
+  * **FastAPI Backend:** Exposes prediction endpoints (`/predict`) and logs inputs, predictions, and sources (`webapp` vs. `scheduled`) to the database.
+  * **Streamlit UI:** Interactive web interface for medical practitioners to input patient records and receive instant risk predictions.
+* **Production Observability (Grafana):**
+  * Live monitoring of prediction distributions, data validation error rates, and ground-truth model performance (Confusion Matrix, False Positives/Negatives, Accuracy over time).
+* **Operational Service Manager (`manage.sh`):**
+  * Custom bash manager script coordinating startup/shutdown of Docker services, FastAPI, Streamlit, and Airflow processes while handling port conflicts.
+
+---
+
+##  Technology Stack
+
+| Layer | Technology |
+| :--- | :--- |
+| **User Interface** | Streamlit |
+| **API Backend** | FastAPI, Uvicorn, Pydantic |
+| **Machine Learning** | Scikit-Learn (Clinical Logistic/Tree Classifier) |
+| **Database** | PostgreSQL 14, pgAdmin |
+| **Orchestration** | Apache Airflow 2.x |
+| **Monitoring** | Grafana |
+| **Infrastructure** | Docker, Docker Compose, Bash (`manage.sh`) |
+
+---
+
+##  Project Structure
+
+```text
 DSP-FINAL-PROJECT/
-├── api/                  # FastAPI backend
-├── webapp/               # Streamlit UI
-├── airflow/              # Airflow home (DAGs, logs, config)
+├── api/                    # FastAPI backend server
+├── webapp/                 # Streamlit user interface
+├── airflow/                # Airflow home & DAG definitions
 │   └── dags/
-├── data/
-│   ├── raw_data/         # Incoming CSVs
-│   ├── good_data/        # Validated data
-│   └── bad_data/         # Invalid data
-├── db/
-│   └── master_sql        # Database schema
-├── grafana/              # Grafana dashboards & provisioning
-│   └── dashboards/
-├── docker-compose.yaml   # Postgres, pgAdmin, Grafana
-├── .venv/                # Python virtual environment
-├── manage.sh             # Professional service manager
-├── env.sh                # Shared environment variables
+│       ├── data_ingestion_pipeline.py
+│       └── process_success_files_dag.py
+├── data/                   # Data processing directories
+│   ├── raw_data/           # Incoming CSV uploads
+│   ├── good_data/          # Schema-validated CSVs
+│   └── bad_data/           # Invalid/corrupted CSV dumps
+├── db/                     # Master SQL schema scripts
+├── grafana/                # Grafana dashboards & provisioning
+├── docker-compose.yaml     # Infrastructure: Postgres, pgAdmin, Grafana
+├── manage.sh               # Service management script
 └── README.md
+```
+##  Quick Start & Operating Instructions
 
-Dataset
+>  Always manage services using `./manage.sh` to ensure clean process execution and avoid port conflicts.
 
-Pima Indians Diabetes Dataset
-https://www.kaggle.com/datasets/uciml/pima-indians-diabetes-database
+### Prerequisites
+* Docker Desktop installed with WSL integration enabled.
+* Python 3.12 virtual environment at `.venv/`.
 
-Features
+### Service Management Commands
 
-Pregnancies
+```bash
+# Make script executable
+chmod +x manage.sh
 
-Glucose
-
-BloodPressure
-
-SkinThickness
-
-Insulin
-
-BMI
-
-DiabetesPedigreeFunction
-
-Age
-
-Target: Outcome (0 = No Diabetes, 1 = Diabetes)
-
-How to Run Everything (Recommended Way)
-
-⚠️ This project should always be started using manage.sh.
-It automatically stops conflicting services and avoids port issues.
-
-1️⃣ Prerequisites
-
-Docker Desktop (with WSL integration enabled)
-
-Python 3.12
-
-Virtual environment already created at .venv/
-
-2️⃣ Start all services
-
-From the project root:
-
+# Start all services (Docker, FastAPI, Streamlit, Airflow)
 ./manage.sh start
 
-
-This will automatically:
-
-Start Docker services (Postgres + pgAdmin + Grafana)
-
-Start FastAPI (port 8000)
-
-Start Streamlit (port 8501)
-
-Start Airflow webserver & scheduler (port 8080)
-
-Kill any conflicting processes on used ports
-
-Write logs to ./logs/
-
-3️⃣ Check service status
+# Check running process status
 ./manage.sh status
 
-
-Expected output:
-
-✅ api running
-✅ streamlit running
-✅ airflow_webserver running
-✅ airflow_scheduler running
-
-4️⃣ Access the applications
-Service	URL
-FastAPI	http://localhost:8000
-
-Streamlit UI	http://localhost:8501
-
-Airflow UI	http://localhost:8080
-
-Grafana	http://localhost:3000
-
-pgAdmin	http://localhost:5051
-
-PostgreSQL	localhost:5432
-5️⃣ Stop everything
+# Stop all running services
 ./manage.sh stop
 
-6️⃣ Restart cleanly (recommended if something breaks)
+# Clean restart
 ./manage.sh restart
 
-Airflow Pipelines
-1️⃣ Data Ingestion DAG
+```
+##  Application Endpoints
 
-DAG ID: data_ingestion_pipeline
+| Service | Access URL | Description |
+| :--- | :--- | :--- |
+| **FastAPI Docs** | `http://localhost:8000/docs` | Interactive Swagger API documentation |
+| **Streamlit UI** | `http://localhost:8501` | Patient prediction web interface |
+| **Airflow UI** | `http://localhost:8080` | Pipeline orchestration & DAG execution |
+| **Grafana** | `http://localhost:3000` | Production metrics dashboard |
+| **pgAdmin** | `http://localhost:5051` | Database UI manager |
+| **PostgreSQL** | `localhost:5432` | Primary SQL storage engine |
 
-Reads one CSV per run from data/raw_data/
+---
 
-Validates schema & values
+##  Database Schema Summary
 
-Moves files to good_data/ or bad_data/
+* **`diabetes_data`:** Stores feature inputs, predicted outcomes (`0`/`1`), ground-truth values (when available), request source, and timestamp.
+* **`file_statistics`:** Tracks ingested files, total rows, valid/invalid row counts, and validation error messages.
 
-Sends file statistics to the API
+---
 
-Saves statistics to PostgreSQL (file_statistics table)
+##  Service Logs
 
-2️⃣ Prediction DAG
+All execution logs are recorded under `./logs/`. Track real-time activity using `tail`:
 
-DAG ID: process_success_files_dag
-
-Detects new files only
-
-Calls /predict?source=scheduled
-
-Stores predictions in PostgreSQL (diabetes_data table)
-
-Skips execution if no new data (expected production behavior)
-
-Database Tables
-diabetes_data (Predictions)
-
-Stores:
-
-Input features
-
-Prediction result
-
-Actual outcome (ground truth when available)
-
-Source (webapp or scheduled)
-
-Timestamp
-
-file_statistics
-
-Stores:
-
-Filename
-
-Total rows
-
-Valid / invalid rows
-
-Validation errors
-
-Timestamp
-
-Grafana Monitoring & Dashboards
-
-Grafana is used for production monitoring and analytics.
-
-Available Dashboards
-
-Model Performance Monitoring
-
-Error distribution (TP / FP / FN / TN)
-
-Accuracy over time (labeled data only)
-
-False Negative / False Positive tracking
-
-Prediction Monitoring
-
-Prediction distribution (0 vs 1)
-
-Predicted diabetes rate (%)
-
-Prediction volume over time
-
-Data Quality Monitoring
-
-Validation error rate over time
-
-Data quality trends from ingestion pipelines
-
-⚠️ Some metrics intentionally require labeled data (actual_outcome).
-No fake confidence or probability metrics are used.
-
-Running Grafana Manually (if needed)
-
-Check available services:
-
-docker compose config --services
-
-
-Start Grafana:
-
-docker compose up -d grafana
-
-
-Access Grafana:
-
-http://localhost:3000
-
-Logs & Debugging
-
-All logs are written to:
-
-./logs/
-
-
-Useful commands:
-
+```bash
 tail -f logs/api.log
 tail -f logs/streamlit.log
 tail -f logs/airflow_webserver.log
-tail -f logs/airflow_scheduler.log
 
-Common Issues & Fixes
-Port already in use
-
-✔ Automatically handled by manage.sh
-
-DAG shows “skipped”
-
-✔ Normal behavior — no new data to process
-
-Database tables missing
-
-✔ Recreated using db/master_sql
-
-Team – HealthVision
-
-Juan Sebastian Pereira Lopez
-
-Iqra Javed
-
-Kaviyarasan Arul Jothi
-
-Basit Ur Rehman
-
-Course
-
-Data Science in Production
-
-Final Notes
-
-This project demonstrates:
-
-Production-ready ML architecture
-
-Automated pipelines
-
-Robust error handling
-
-Reproducible infrastructure
-
-Ethical monitoring (no fake metrics)
-
-Clean operational workflows
+```
